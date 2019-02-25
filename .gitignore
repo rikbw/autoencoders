@@ -1,6 +1,6 @@
 .idea
 venv
 idea
-data
+data/*.npy
 standard/checkpoints
 
