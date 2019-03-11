@@ -30,6 +30,69 @@ def sampling(args):
   epsilon = K.random_normal(shape=(batch, dim))
   return z_mean + K.exp(0.5 * z_log_var) * epsilon
 
+def generate_plot(models,data,batch_size=128,model_name="vae_mnist"):
+  encoder, decoder = models
+  x_test, y_test = data
+
+  latent_images = encoder.predict(x_test)
+
+  fashion_article = 7
+  end_size = len(latent_images[0][0]) #Size of the encoding
+  avg_latent = np.zeros(end_size)
+  examples = 0
+  for img_idx in range(0,len(latent_images[0])):
+    if y_test[img_idx] == fashion_article:
+        avg_latent += latent_images[0][img_idx]
+        examples += 1
+
+  avg_latent = avg_latent / examples
+  print("Examples found: " + str(examples))
+  subplots = 10
+
+  fig = plt.figure(figsize=(20, 10))
+
+  for i in range(0,subplots):
+    z_sample = np.array([avg_latent]) + np.random.normal(0, 0.3, end_size)
+    z_random = np.array(np.array([np.zeros(end_size)]) + np.random.normal(0, 1, end_size))
+    print(z_random.shape)
+    decoded = decoder.predict(z_random)
+    generated = decoded[0].reshape(28,28)
+    ax = fig.add_subplot(1, subplots, i + 1)
+    ax.imshow(generated, cmap='Greys_r')
+    ax.axis('off')
+  fig.savefig('random_generation2.png')
+  plt.show()
+
+
+def plot_mixture(models, data, batch_size=128,model_name="vae_mnist"):
+  encoder, decoder = models
+  x_test, y_test = data
+
+  os.makedirs(model_name, exist_ok=True)
+  latent_images = encoder.predict(x_test)
+  img1_index = 110
+  img2_index = 114
+  subplots = 10
+
+  latent_im1 = latent_images[0][img1_index]
+  latent_im2 = latent_images[0][img2_index]
+
+
+  diff_vector = np.array(latent_im2) - np.array(latent_im1)
+
+  fig = plt.figure(figsize=(20, 10))
+  plt.axis('off')
+  for i in range(0,subplots):
+    z_sample = np.array([latent_im1]) + (i/(subplots-1))*diff_vector
+    x_decoded = decoder.predict(z_sample)
+    interpolation = x_decoded[0].reshape(28, 28)
+    ax =fig.add_subplot(1,subplots,i+1)
+    ax.imshow(interpolation, cmap='Greys_r')
+    ax.axis('off')
+  #fig.savefig('shirt2_interpolation.png')
+  plt.show()
+
+  return None
 
 def plot_results(models,
                  data,
@@ -48,6 +111,7 @@ def plot_results(models,
   os.makedirs(model_name, exist_ok=True)
 
   filename = os.path.join(model_name, "vae_mean.png")
+
   # display a 2D plot of the digit classes in the latent space
   z_mean, _, _ = encoder.predict(x_test,
                                  batch_size=batch_size)
@@ -60,8 +124,7 @@ def plot_results(models,
   plt.show()
 
   filename = os.path.join(model_name, "digits_over_latent.png")
-  # display a 30x30 2D manifold of digits
-  n = 30
+  n = 10
   digit_size = 28
   figure = np.zeros((digit_size * n, digit_size * n))
   # linearly spaced coordinates corresponding to the 2D plot
@@ -105,8 +168,9 @@ x_test = x_test.astype('float32') / 255
 input_shape = (original_dim,)
 intermediate_dim = 512
 batch_size = 128
-latent_dim = 2
+latent_dim = 256
 epochs = 50
+
 
 # VAE model = encoder + decoder
 # build encoder model
@@ -177,9 +241,13 @@ if __name__ == '__main__':
             epochs=epochs,
             batch_size=batch_size,
             validation_data=(x_test, None))
-    vae.save_weights('vae_mlp_mnist.h5')
+    vae.save_weights('vae_mlp_mnist_512_256.h5')
 
-  plot_results(models,
-               data,
-               batch_size=batch_size,
-               model_name="vae_mlp")
+  if latent_dim == 3:
+    plot_results(models,
+                 data,
+                 batch_size=batch_size,
+                 model_name="vae_mlp")
+  #plot_mixture(models,data,batch_size=batch_size,model_name="vae_fashion")
+  generate_plot(models,data,batch_size=batch_size,model_name="vae_fashion")
+

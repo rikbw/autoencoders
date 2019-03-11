@@ -11,6 +11,7 @@ import numpy as np
 x_train = np.load('/Users/rikbw/Dev/autoencoders/data/mnist_noisy_35.npy')
 x_test = np.load('/Users/rikbw/Dev/autoencoders/data/mnist_noisy_test_35.npy')
 
+
 (x_train_denoised, _), (x_test_denoised, _) = mnist.load_data()
 
 # Flatten images
